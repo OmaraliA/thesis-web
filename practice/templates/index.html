@@ -1,0 +1,335 @@
+<html>
+<head>
+	<title>Do sentiment analysis on the text</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://d3js.org/d3.v4.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="../static/css/bootstrap.css">
+	<style type="text/css">
+    body {
+      padding-top:60px;
+      padding-bottom: 60px;
+    }
+	textarea {
+		width: 400px !important;
+    	margin: 30px;
+	}
+	.row-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		border-bottom: 1px solid gray;
+    	padding: 20px;
+	}
+	h5 {
+		text-align: center;
+	}
+	.pie {
+		margin: 20px;
+	}
+
+	svg {
+		float: left;
+	}
+
+	.legend {
+	float: left;
+	font-family: "Verdana";
+	font-size: .7em;
+	}
+
+	.pie text {
+	font-family: "Verdana";
+	fill: #000;
+	}
+
+	.pie .name-text{
+	font-size: .8em;
+	}
+
+	.pie .value-text{
+	font-size: 3em;
+	}
+  </style>
+</head>
+<body>
+
+<div class="container">
+	<div class="row row-header">
+		<h2>Sentiment analysis</h2>
+		<textarea class="form-control" rows="3" placeholder="Enter your word" id="input"></textarea>
+		<button id="btnPredict" class="btn btn-primary">Define sentiment</button>
+	</div>
+</div>
+
+<div id="result" class="container">
+	<div class="row">
+		<div class="col-md-3">
+			<h5>
+				TextBlog
+			</h5>
+			<p id="resultOne"></p>
+		</div>
+		<div class="col-md-3">
+			<h5>
+				Polyglot
+			</h5>
+			<p id="resultTwo"></p>
+		</div>
+		<div class="col-md-3">
+			<h5>
+				BERT
+			</h5>
+			<p id="resultThree"></p>
+		</div>
+		<div class="col-md-3">
+			<h5>
+				LSTM
+			</h5>
+			<p id="resultFour"></p>
+		</div>
+	</div>
+</div>
+<div class="container" style="margin-top: 50px;">
+	<div class="row">
+		<h2>Sentiment of data from file</h2>
+		<div class="col-md-6">
+			<div id="graph"></div>
+		</div>
+		<div class="col-md-6">
+			<div id="positive">
+				<h4>Positive content: </h4>
+			</div>
+			<div id="negative">
+				<h4>Negative content: </h4>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="../static/js/jquery.js"></script>
+
+<script type="text/javascript">
+	$( "#input").keyup(function() {
+		$('#resultOne').removeClass().text('');
+		$('#resultTwo').removeClass().text('');
+		$('#resultThree').removeClass().text('');
+		$('#resultFour').removeClass().text('');
+	});
+	$( "#btnPredict" ).click(function() {
+		var input = $('textarea').val().toString().toLowerCase();
+		$.get('/sentimentTextBlob/' + input, function(result) {
+			if(result < 0){
+				$('#resultOne').addClass("alert alert-danger").text("Negative");
+			} else if(result > 0.0 && result < 0.5){
+				$('#resultOne').addClass("alert alert-warning").text("Neural");
+			}else{
+				$('#resultOne').addClass("alert alert-success").text("Positive");
+			}
+				
+		})
+		$.get('/sentimentPolyglot/' + input, function(result) {
+			if(result === 'Negative'){
+				$('#resultTwo').addClass("alert alert-danger").text(result);
+			} else if( result=== 'Neural'){
+				$('#resultTwo').addClass("alert alert-warning").text(result);
+			} else {
+				$('#resultTwo').addClass("alert alert-success").text(result);
+			}
+			
+		})
+		$.get('/sentimentBert/' + input, function(result) {
+			if(result === 'Negative'){
+				$('#resultThree').addClass("alert alert-danger").text(result);
+			} else {
+				$('#resultThree').addClass("alert alert-success").text(result);
+			}
+		})
+		$.get('/sentimentLSTM/' + input, function(result) {
+			if(result === 'Negative'){
+				$('#resultFour').addClass("alert alert-danger").text(result);
+			} else {
+				$('#resultFour').addClass("alert alert-success").text(result);
+			}
+		})
+	});
+</script>
+<script type="text/javascript">
+var positives = 0;
+var negatives = 0;
+
+var text = [
+	"I am waiting your new album",
+	"Your profile is so interesting",
+	"You look perfect",
+	"This photo made me sad",
+	"Do not judge them",
+	"Do not show us your talent",
+	"Delete your photo",
+	"Sorry I hate you",
+	"I admire you",
+	"I believe that you will get a first place"
+]
+$.get('/sentimentLSTMarray/' + text, function(result) {
+
+	positives = result.positive;
+	negatives = result.negative;
+	var data = [
+		{name: "Positive", value: positives.length},
+		{name: "Negative", value: negatives.length},
+	];
+	var elements = [],
+	newDiv;
+	for (x = 0; x < positives.length; x++) {
+		newDiv = $('<div/>').text(x+1 + '. ' + positives[x]);
+		elements.push(newDiv);
+	}
+	$('#positive').append(elements);
+
+	var elementsNeg = [],
+	newDivNeg;
+	for (x = 0; x < negatives.length; x++) {
+		newDivNeg = $('<div/>').text(x+1 + '. ' + negatives[x]);
+		elementsNeg.push(newDivNeg);
+	}
+	$('#negative').append(elementsNeg);
+	// $('#positive').append(elements);
+var text = "";
+
+var width = 200;
+var height = 200;
+var thickness = 40;
+var duration = 750;
+var padding = 10;
+var opacity = .8;
+var opacityHover = 1;
+var otherOpacityOnHover = .8;
+var tooltipMargin = 13;
+
+var radius = Math.min(width-padding, height-padding) / 2;
+var color = d3.scaleOrdinal().domain(data).range(["red", "green"]);
+
+var svg = d3.select("#graph")
+.append('svg')
+.attr('class', 'pie')
+.attr('width', width)
+.attr('height', height);
+
+var g = svg.append('g')
+.attr('transform', 'translate(' + (width/2) + ',' + (height/2) + ')');
+
+var arc = d3.arc()
+.innerRadius(0)
+.outerRadius(radius);
+
+var pie = d3.pie()
+.value(function(d) { return d.value; })
+.sort(null);
+
+var path = g.selectAll('path')
+  .data(pie(data))
+  .enter()
+  .append("g")  
+  .append('path')
+  .attr('d', arc)
+  .attr('fill', (d,i) => color(i))
+  .style('opacity', opacity)
+  .style('stroke', 'white')
+  .on("mouseover", function(d) {
+      d3.selectAll('path')
+        .style("opacity", otherOpacityOnHover);
+      d3.select(this) 
+        .style("opacity", opacityHover);
+
+      let g = d3.select("svg")
+        .style("cursor", "pointer")
+        .append("g")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+ 
+      g.append("text")
+        .attr("class", "name-text")
+        .text(`${d.data.name} (${d.data.value})`)
+        .attr('text-anchor', 'middle');
+    
+      let text = g.select("text");
+      let bbox = text.node().getBBox();
+      let padding = 2;
+      g.insert("rect", "text")
+        .attr("x", bbox.x - padding)
+        .attr("y", bbox.y - padding)
+        .attr("width", bbox.width + (padding*2))
+        .attr("height", bbox.height + (padding*2))
+        .style("fill", "white")
+        .style("opacity", 0.75);
+    })
+  .on("mousemove", function(d) {
+        let mousePosition = d3.mouse(this);
+        let x = mousePosition[0] + width/2;
+        let y = mousePosition[1] + height/2 - tooltipMargin;
+    
+        let text = d3.select('.tooltip text');
+        let bbox = text.node().getBBox();
+        if(x - bbox.width/2 < 0) {
+          x = bbox.width/2;
+        }
+        else if(width - x - bbox.width/2 < 0) {
+          x = width - bbox.width/2;
+        }
+    
+        if(y - bbox.height/2 < 0) {
+          y = bbox.height + tooltipMargin * 2;
+        }
+        else if(height - y - bbox.height/2 < 0) {
+          y = height - bbox.height/2;
+        }
+    
+        d3.select('.tooltip')
+          .style("opacity", 1)
+          .attr('transform',`translate(${x}, ${y})`);
+    })
+  .on("mouseout", function(d) {   
+      d3.select("svg")
+        .style("cursor", "none")  
+        .select(".tooltip").remove();
+    d3.selectAll('path')
+        .style("opacity", opacity);
+    })
+  .on("touchstart", function(d) {
+      d3.select("svg")
+        .style("cursor", "none");    
+  })
+  .each(function(d, i) { this._current = i; });
+
+let legend = d3.select("#graph").append('div')
+			.attr('class', 'legend')
+			.style('margin-top', '30px');
+
+let keys = legend.selectAll('.key')
+			.data(data)
+			.enter().append('div')
+			.attr('class', 'key')
+			.style('display', 'flex')
+			.style('align-items', 'center')
+			.style('margin-right', '20px');
+
+		keys.append('div')
+			.attr('class', 'symbol')
+			.style('height', '10px')
+			.style('width', '10px')
+			.style('margin', '5px 5px')
+			.style('background-color', (d, i) => color(i));
+
+		keys.append('div')
+			.attr('class', 'name')
+			.text(d => `${d.name} (${d.value})`);
+
+		keys.exit().remove();
+})
+
+</script>
+</body>
+</html>
